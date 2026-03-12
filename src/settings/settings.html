@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com">
+  <link rel="stylesheet" href="settings.css">
+  <title>GitHub Multi-Account - Settings</title>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>GitHub Multi-Account Settings</h1>
+    </header>
+    <section id="accounts-list"></section>
+    <section id="add-account-form">
+      <h2>Add Account</h2>
+      <form id="account-form">
+        <div class="form-group">
+          <label for="account-id">Label</label>
+          <input type="text" id="account-id" placeholder="e.g. personal, work1" required />
+        </div>
+        <div class="form-group">
+          <label for="account-username">GitHub Username</label>
+          <input type="text" id="account-username" placeholder="e.g. octocat" required />
+        </div>
+        <div class="form-group">
+          <label for="account-pat">Personal Access Token</label>
+          <input type="password" id="account-pat" placeholder="ghp_..." required />
+          <button type="button" id="test-pat-btn">Test PAT</button>
+          <span id="pat-status"></span>
+        </div>
+        <div class="form-group">
+          <label for="account-orgs">Orgs / Owners (comma-separated)</label>
+          <input type="text" id="account-orgs" placeholder="e.g. my-org, my-team" />
+        </div>
+        <button type="submit" id="save-btn">Save Account</button>
+      </form>
+    </section>
+  </div>
+  <script src="settings.js" type="module"></script>
+</body>
+</html>

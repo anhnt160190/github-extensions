@@ -1,0 +1,170 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: #c9d1d9;
+  background: #0d1117;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #21262d;
+}
+
+header h1 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* Accounts list */
+#accounts-list {
+  margin-bottom: 24px;
+}
+
+.account-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.account-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.account-card-label {
+  font-weight: 600;
+  color: #58a6ff;
+}
+
+.account-card-username {
+  color: #8b949e;
+  font-size: 13px;
+}
+
+.account-card-orgs {
+  font-size: 12px;
+  color: #8b949e;
+  margin-top: 4px;
+}
+
+.account-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.session-status {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.session-status.captured { color: #3fb950; }
+.session-status.not-captured { color: #f85149; }
+
+/* Form */
+#add-account-form {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #8b949e;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 6px 10px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9;
+  font-size: 13px;
+  outline: none;
+}
+.form-group input:focus { border-color: #58a6ff; }
+
+button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background: #21262d;
+  color: #c9d1d9;
+  font-size: 13px;
+  cursor: pointer;
+}
+button:hover { background: #30363d; }
+
+#save-btn {
+  background: #238636;
+  border-color: #2ea043;
+  color: #fff;
+}
+#save-btn:hover { background: #2ea043; }
+
+#test-pat-btn {
+  margin-top: 6px;
+}
+
+.btn-danger {
+  background: #da3633;
+  border-color: #f85149;
+  color: #fff;
+}
+.btn-danger:hover { background: #f85149; }
+
+.btn-capture {
+  background: #1f6feb;
+  border-color: #388bfd;
+  color: #fff;
+}
+.btn-capture:hover { background: #388bfd; }
+
+#pat-status {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+.status-success { color: #3fb950; }
+.status-error { color: #f85149; }
+
+/* Edit mode */
+.edit-input {
+  padding: 4px 8px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  color: #c9d1d9;
+  font-size: 13px;
+  width: 100%;
+  margin-top: 4px;
+}

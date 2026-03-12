@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com">
+  <link rel="stylesheet" href="popup.css">
+  <title>GitHub Multi-Account</title>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>GitHub Multi-Account</h1>
+      <button id="settings-btn" title="Settings">&#9881;</button>
+    </header>
+    <section id="accounts-section"></section>
+    <section id="search-section">
+      <input type="text" id="search-input" placeholder="Search repos..." />
+    </section>
+    <nav id="tab-bar">
+      <button class="tab active" data-tab="repos">Repos</button>
+      <button class="tab" data-tab="authored">My PRs</button>
+      <button class="tab" data-tab="reviews">Reviews</button>
+    </nav>
+    <section id="content-area">
+      <div id="loading" class="hidden">Loading...</div>
+      <div id="empty-state" class="hidden">No results</div>
+      <ul id="results-list"></ul>
+    </section>
+    <button id="refresh-btn" class="hidden">Refresh</button>
+  </div>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
