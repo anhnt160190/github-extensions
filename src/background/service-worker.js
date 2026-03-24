@@ -38,44 +38,52 @@ function parseOwnerFromUrl(url) {
   }
 }
 
-// Auto-switch logic on navigation complete
-chrome.webNavigation.onCompleted.addListener(
-  async (details) => {
-    // Only handle main frame navigations
-    if (details.frameId !== 0) return;
+// Auto-switch logic: shared handler for both full and SPA navigations
+async function handleNavigation(details) {
+  // Only handle main frame navigations
+  if (details.frameId !== 0) return;
 
-    const owner = parseOwnerFromUrl(details.url);
-    if (!owner) return;
+  const owner = parseOwnerFromUrl(details.url);
+  if (!owner) return;
 
-    // Rate limit: skip if switched recently on this tab
-    const lastSwitch = lastSwitchByTab.get(details.tabId);
-    if (lastSwitch && Date.now() - lastSwitch < SWITCH_COOLDOWN_MS) return;
+  // Rate limit: skip if switched recently on this tab
+  const lastSwitch = lastSwitchByTab.get(details.tabId);
+  if (lastSwitch && Date.now() - lastSwitch < SWITCH_COOLDOWN_MS) return;
 
-    // Find account mapped to this owner/org
-    const targetAccount = await getAccountForOrg(owner);
-    if (!targetAccount) return;
+  // Find account mapped to this owner/org
+  const targetAccount = await getAccountForOrg(owner);
+  if (!targetAccount) return;
 
-    // Check current session
-    const currentUsername = await getCurrentUsername();
-    if (currentUsername === targetAccount.username) {
-      // Already on correct account, just update badge
-      updateBadge(targetAccount.id);
-      return;
-    }
+  // Check current session
+  const currentUsername = await getCurrentUsername();
+  if (currentUsername === targetAccount.username) {
+    // Already on correct account, just update badge
+    updateBadge(targetAccount.id);
+    return;
+  }
 
-    // Need to switch — check if target has stored cookies
-    if (!targetAccount.cookies) return;
+  // Need to switch — check if target has stored cookies
+  if (!targetAccount.cookies) return;
 
-    try {
-      lastSwitchByTab.set(details.tabId, Date.now());
-      await swapSession(targetAccount.id);
-      updateBadge(targetAccount.id);
-      chrome.tabs.reload(details.tabId);
-    } catch (err) {
-      console.error('Auto-switch failed:', err.message);
-    }
-  },
-  { url: [{ hostEquals: 'github.com' }] }
+  try {
+    lastSwitchByTab.set(details.tabId, Date.now());
+    await swapSession(targetAccount.id);
+    updateBadge(targetAccount.id);
+    chrome.tabs.reload(details.tabId);
+  } catch (err) {
+    console.error('Auto-switch failed:', err.message);
+  }
+}
+
+const NAV_FILTER = { url: [{ hostEquals: 'github.com' }] };
+
+// Full page navigations (address bar, reload, external links)
+chrome.webNavigation.onCompleted.addListener(handleNavigation, NAV_FILTER);
+
+// SPA navigations via history.pushState (GitHub Turbo/pjax link clicks)
+chrome.webNavigation.onHistoryStateUpdated.addListener(
+  handleNavigation,
+  NAV_FILTER
 );
 
 // Update toolbar badge with current account initial
