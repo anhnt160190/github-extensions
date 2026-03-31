@@ -7,32 +7,30 @@ import { getCurrentUsername, swapSession } from '../lib/cookie-manager.js';
 const lastSwitchByTab = new Map();
 const SWITCH_COOLDOWN_MS = 5000;
 
-// URL paths to skip (no auto-switch on these pages)
-const SKIP_PATHS = [
-  '/settings',
-  '/notifications',
-  '/login',
-  '/new',
-  '/organizations',
-  '/explore',
-  '/marketplace',
-  '/pulls',
-  '/issues',
-  '/codespaces',
-  '/sponsors',
-];
+// Top-level path segments to skip (GitHub reserved paths, not user/org names)
+const SKIP_SEGMENTS = new Set([
+  'settings',
+  'notifications',
+  'login',
+  'new',
+  'organizations',
+  'explore',
+  'marketplace',
+  'pulls',
+  'issues',
+  'codespaces',
+  'sponsors',
+]);
 
 // Extract owner from GitHub URL path: /owner/repo/... → owner
 function parseOwnerFromUrl(url) {
   try {
     const { pathname } = new URL(url);
-    // Skip root and special paths
-    if (pathname === '/' || pathname === '') return null;
-    for (const skip of SKIP_PATHS) {
-      if (pathname.startsWith(skip)) return null;
-    }
-    const parts = pathname.split('/').filter(Boolean);
-    return parts[0] || null;
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments.length === 0) return null;
+    // Match exact segment, not prefix (avoids false-matching orgs like "newrelic")
+    if (SKIP_SEGMENTS.has(segments[0])) return null;
+    return segments[0];
   } catch {
     return null;
   }
@@ -40,33 +38,35 @@ function parseOwnerFromUrl(url) {
 
 // Auto-switch logic: shared handler for both full and SPA navigations
 async function handleNavigation(details) {
-  // Only handle main frame navigations
-  if (details.frameId !== 0) return;
-
-  const owner = parseOwnerFromUrl(details.url);
-  if (!owner) return;
-
-  // Rate limit: skip if switched recently on this tab
-  const lastSwitch = lastSwitchByTab.get(details.tabId);
-  if (lastSwitch && Date.now() - lastSwitch < SWITCH_COOLDOWN_MS) return;
-
-  // Find account mapped to this owner/org
-  const targetAccount = await getAccountForOrg(owner);
-  if (!targetAccount) return;
-
-  // Check current session
-  const currentUsername = await getCurrentUsername();
-  if (currentUsername === targetAccount.username) {
-    // Already on correct account, just update badge
-    updateBadge(targetAccount.id);
-    return;
-  }
-
-  // Need to switch — check if target has stored cookies
-  if (!targetAccount.cookies) return;
-
   try {
+    // Only handle main frame navigations
+    if (details.frameId !== 0) return;
+
+    const owner = parseOwnerFromUrl(details.url);
+    if (!owner) return;
+
+    // Rate limit: skip if switched recently on this tab
+    const lastSwitch = lastSwitchByTab.get(details.tabId);
+    if (lastSwitch && Date.now() - lastSwitch < SWITCH_COOLDOWN_MS) return;
+
+    // Find account mapped to this owner/org
+    const targetAccount = await getAccountForOrg(owner);
+    if (!targetAccount) return;
+
+    // Check current session
+    const currentUsername = await getCurrentUsername();
+    if (currentUsername?.toLowerCase() === targetAccount.username?.toLowerCase()) {
+      // Already on correct account, just update badge
+      updateBadge(targetAccount.id);
+      return;
+    }
+
+    // Need to switch — check if target has stored cookies
+    if (!targetAccount.cookies) return;
+
+    // Set timestamp before async work to prevent concurrent swaps
     lastSwitchByTab.set(details.tabId, Date.now());
+
     await swapSession(targetAccount.id);
     updateBadge(targetAccount.id);
     chrome.tabs.reload(details.tabId);

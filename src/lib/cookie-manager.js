@@ -1,11 +1,15 @@
 // Cookie capture, store, and swap for GitHub account switching
 
-import { getAccountById, updateAccount } from './account-manager.js';
+import {
+  getAccounts,
+  getAccountById,
+  updateAccount,
+} from './account-manager.js';
 
 const GITHUB_DOMAIN = '.github.com';
 const GITHUB_URL = 'https://github.com';
 
-// Critical GitHub cookies that define a session
+// Critical GitHub cookies that define a session (used for validation)
 const SESSION_COOKIE_NAMES = [
   'user_session',
   '__Host-user_session_same_site',
@@ -14,18 +18,9 @@ const SESSION_COOKIE_NAMES = [
   '_gh_sess',
 ];
 
-// Capture current GitHub session cookies (only critical ones)
+// Capture ALL current GitHub cookies (full snapshot for reliable restore)
 export async function captureSession() {
-  const all = await chrome.cookies.getAll({ domain: GITHUB_DOMAIN });
-  return all.filter((c) => SESSION_COOKIE_NAMES.includes(c.name));
-}
-
-// Store captured cookies for a specific account
-export async function storeSession(accountId, cookies) {
-  await updateAccount(accountId, {
-    cookies,
-    cookiesCapturedAt: new Date().toISOString(),
-  });
+  return chrome.cookies.getAll({ domain: GITHUB_DOMAIN });
 }
 
 // Read the current logged-in GitHub username from dotcom_user cookie
@@ -37,12 +32,38 @@ export async function getCurrentUsername() {
   return cookie?.value || null;
 }
 
-// Swap session: remove current cookies, set target account's cookies
+// Save current browser cookies for the currently logged-in account (auto-detect).
+// Failures are non-fatal — a failed save should never block the swap.
+async function saveCurrentSession() {
+  try {
+    const currentUser = await getCurrentUsername();
+    if (!currentUser) return;
+
+    const accounts = await getAccounts();
+    const current = accounts.find(
+      (a) => a.username.toLowerCase() === currentUser.toLowerCase()
+    );
+    if (!current) return;
+
+    const cookies = await captureSession();
+    await updateAccount(current.id, {
+      cookies,
+      cookiesCapturedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('Failed to auto-save current session:', err.message);
+  }
+}
+
+// Swap session: save current session, remove cookies, set target account's cookies
 export async function swapSession(accountId) {
   const account = await getAccountById(accountId);
   if (!account?.cookies) {
     throw new Error(`No stored session for account "${accountId}"`);
   }
+
+  // Auto-save current session before destroying it
+  await saveCurrentSession();
 
   // Remove all current GitHub cookies
   const currentCookies = await chrome.cookies.getAll({
@@ -54,8 +75,12 @@ export async function swapSession(accountId) {
     await chrome.cookies.remove({ url: cookieUrl, name: cookie.name });
   }
 
-  // Set target account's cookies
-  for (const cookie of account.cookies) {
+  // Set target account's cookies (skip expired ones)
+  const now = Date.now() / 1000;
+  const validCookies = account.cookies.filter(
+    (c) => !c.expirationDate || c.expirationDate > now
+  );
+  for (const cookie of validCookies) {
     const details = {
       url: `https://${cookie.domain.replace(/^\./, '')}${cookie.path}`,
       name: cookie.name,
